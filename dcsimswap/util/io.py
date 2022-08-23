@@ -11,6 +11,7 @@ from dcsimswap.insightface_func.face_detect_crop_multi import Face_detect_crop
 from dcsimswap.models.models import create_model
 from dcsimswap.options.test_options import TestOptions
 
+
 def video_swap(video_path, id_vetor, id_vetor_flip, crop_size=512):
     """Read video and infer SimSwap"""
 
@@ -199,6 +200,7 @@ def reverse2wholeimage(align_faces, swaped_imgs, mats, crop_size, oriimg):
         debug_img = img_mask * target_image + (1 - img_mask) * oriimg
     return oriimg, debug_img, final_img
 
+
 def load_models():
     opt = TestOptions()
     opt.initialize()
@@ -225,3 +227,30 @@ transformer_Arcface = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
+
+
+def run():
+    """Get target embedding and call swap function"""
+    with torch.no_grad():
+        latend_id = torch.zeros((1, 512)).to(DEVICE)
+        latend_id_flip = torch.zeros((1, 512)).to(DEVICE)
+        for pic_a in IMAGE_PATHS:
+            img_a_whole = cv2.imread(pic_a)
+            img_a_align_crop, _ = FACE_DETECTION_MODEL.get(img_a_whole, 512)
+            align_crop = cv2.cvtColor(img_a_align_crop[0], cv2.COLOR_BGR2RGB)
+
+            align_crop = cv2.resize(align_crop, (112, 112), interpolation=cv2.INTER_LANCZOS4)
+            img = transformer_Arcface(align_crop)[None].to(DEVICE)
+
+            latend_id += SWAP_MODEL.netArc(img)
+            if USE_IMAGE_FLIP:
+                latend_id_flip += SWAP_MODEL.netArc(torch.flip(img, (3,)))
+
+        latend_id = F.normalize(latend_id, p=2, dim=1)
+        latend_id_flip = F.normalize(latend_id_flip, p=2, dim=1)
+
+        video_swap(
+            VIDEO_PATH,
+            latend_id,
+            latend_id_flip,
+        )
