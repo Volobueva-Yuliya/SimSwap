@@ -1,6 +1,6 @@
 import argparse
 import os
-from util import util
+from dcsimswap.util import util
 import torch
 
 class BaseOptions():

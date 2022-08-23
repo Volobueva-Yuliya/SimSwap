@@ -14,7 +14,7 @@ import os
 import os.path as osp
 import cv2
 from insightface.model_zoo import model_zoo
-from insightface_func.utils import face_align_ffhqandnewarc as face_align
+from dcsimswap.insightface_func.utils import face_align_ffhqandnewarc as face_align
 
 __all__ = ['Face_detect_crop', 'Face']
 

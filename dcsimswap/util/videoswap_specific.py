@@ -5,15 +5,15 @@ import torch
 import shutil
 import numpy as np
 from tqdm import tqdm
-from util.reverse2original import reverse2wholeimage
+from dcsimswap.util.reverse2original import reverse2wholeimage
 import moviepy.editor as mp
 from moviepy.editor import AudioFileClip, VideoFileClip 
 from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 import  time
-from util.add_watermark import watermark_image
-from util.norm import SpecificNorm
+from dcsimswap.util.add_watermark import watermark_image
+from dcsimswap.util.norm import SpecificNorm
 import torch.nn.functional as F
-from parsing_model.model import BiSeNet
+from dcsimswap.parsing_model.model import BiSeNet
 
 def _totensor(array):
     tensor = torch.from_numpy(array)
