@@ -32,7 +32,7 @@ def compute_grad2(d_out, x_in):
 
 class fsModel(BaseModel):
     def name(self):
-        return 'fsModel'
+        return 'dcsimswap.fsModel'
 
     def initialize(self, opt):
         BaseModel.initialize(self, opt)

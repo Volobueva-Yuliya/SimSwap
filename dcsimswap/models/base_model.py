@@ -4,7 +4,7 @@ import sys
 
 class BaseModel(torch.nn.Module):
     def name(self):
-        return 'BaseModel'
+        return 'dcsimswap.BaseModel'
 
     def initialize(self, opt):
         self.opt = opt

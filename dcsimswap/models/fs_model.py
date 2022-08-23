@@ -32,7 +32,7 @@ class SpecificNorm(nn.Module):
 
 class fsModel(BaseModel):
     def name(self):
-        return 'fsModel'
+        return 'dcsimswap.fsModel'
 
     def init_loss_filter(self, use_gan_feat_loss, use_vgg_loss):
         flags = (True, use_gan_feat_loss, use_vgg_loss, True, True, True, True, True)
