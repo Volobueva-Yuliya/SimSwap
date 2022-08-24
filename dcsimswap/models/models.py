@@ -3,16 +3,16 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torch.nn import Parameter
-from .config import device, num_classes
+from dcsimswap.models.config import device, num_classes
 
 
 def create_model(opt):
     if opt.model == 'dcsimswap.pix2pixHD':
         #from .pix2pixHD_model import Pix2PixHDModel, InferenceModel
-        from .fs_model import fsModel
+        from dcsimswap.models.fs_model import fsModel
         model = fsModel()
     else:
-        from .ui_model import UIModel
+        from dcsimswap.models.ui_model import UIModel
         model = UIModel()
 
     model.initialize(opt)
