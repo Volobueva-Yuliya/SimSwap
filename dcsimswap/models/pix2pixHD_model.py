@@ -8,7 +8,7 @@ from . import networks
 
 class Pix2PixHDModel(BaseModel):
     def name(self):
-        return 'dcsimswap.Pix2PixHDModel'
+        return 'Pix2PixHDModel'
     
     def init_loss_filter(self, use_gan_feat_loss, use_vgg_loss):
         flags = (True, use_gan_feat_loss, use_vgg_loss, True, True)
