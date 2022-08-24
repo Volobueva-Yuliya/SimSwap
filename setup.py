@@ -16,6 +16,7 @@ setup(
         'numpy',
         'insightface',
         'pillow',
+        'tqdm',
     ],
     include_package_data=True,
     package_data={'': ['*.yaml']},

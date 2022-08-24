@@ -4,13 +4,13 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 from torchvision import transforms
-import tqdm
 import numpy as np
 from bisenet import BiSeNetModel
 from skvideo.io import FFmpegWriter
 import os
 import uuid
 import subprocess
+from tqdm.auto import tqdm
 from pathlib import Path
 from dcsimswap.insightface_func.face_detect_crop_multi import Face_detect_crop
 from dcsimswap.models.models import create_model
