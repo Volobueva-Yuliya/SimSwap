@@ -32,7 +32,7 @@ class SpecificNorm(nn.Module):
 
 class fsModel(BaseModel):
     def name(self):
-        return 'dcsimswap.fsModel'
+        return 'fsModel'
 
     def init_loss_filter(self, use_gan_feat_loss, use_vgg_loss):
         flags = (True, use_gan_feat_loss, use_vgg_loss, True, True, True, True, True)
@@ -65,7 +65,7 @@ class fsModel(BaseModel):
         # Id network
         netArc_checkpoint = opt.Arc_path
         netArc_checkpoint = torch.load(netArc_checkpoint)
-        self.netArc = netArc_checkpoint['dcsimswap.model'].module
+        self.netArc = netArc_checkpoint['model'].module
         self.netArc = self.netArc.to(device)
         self.netArc.eval()
 
