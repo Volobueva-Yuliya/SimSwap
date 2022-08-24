@@ -10,7 +10,7 @@ from . import networks
 
 class UIModel(BaseModel):
     def name(self):
-        return 'dcsimswap.UIModel'
+        return 'UIModel'
 
     def initialize(self, opt):
         assert(not opt.isTrain)
