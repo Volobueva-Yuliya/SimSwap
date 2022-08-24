@@ -225,11 +225,6 @@ def load_models():
     FACE_DETECTION_MODEL.prepare(ctx_id=0, det_thresh=0.6, det_size=(640, 640), mode=mode)
     return SWAP_MODEL, PSFRGAN, PARSING_MODEL, FACE_DETECTION_MODEL
 
-transformer_Arcface = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-])
-
 
 def run():
     """Get target embedding and call swap function"""
