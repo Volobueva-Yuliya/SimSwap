@@ -11,6 +11,7 @@ from skvideo.io import FFmpegWriter
 import os
 import uuid
 import subprocess
+from pathlib import Path
 from dcsimswap.insightface_func.face_detect_crop_multi import Face_detect_crop
 from dcsimswap.models.models import create_model
 from dcsimswap.options.test_options import TestOptions
@@ -216,8 +217,8 @@ def load_models():
     opt = opt.parse()
     opt.crop_size = 512
     opt.which_epoch = 550000
-    opt.Arc_path = '~/.cache/dcsimswap/download/arcface_model/arcface_checkpoint.tar'
-    opt.checkpoints_dir = '~/.cache/dcsimswap/download/checkpoints'
+    opt.Arc_path = str(Path().home() / '.cache/dcsimswap/download/arcface_model/arcface_checkpoint.tar') 
+    opt.checkpoints_dir = str(Path().home() / '.cache/dcsimswap/download/checkpoints')
     torch.nn.Module.dump_patches = False
     opt.name = '512'
     SWAP_MODEL = create_model(opt)
@@ -227,7 +228,7 @@ def load_models():
     PARSING_MODEL = BiSeNetModel(DEVICE).to(DEVICE).eval()
 
     mode = 'ffhq'
-    FACE_DETECTION_MODEL = Face_detect_crop(name='antelope', root='~/.cache/dcsimswap/download/insightface_func/models')
+    FACE_DETECTION_MODEL = Face_detect_crop(name='antelope', root=str(Path().home() / '.cache/dcsimswap/download/insightface_func/models'))
     FACE_DETECTION_MODEL.prepare(ctx_id=0, det_thresh=0.6, det_size=(640, 640), mode=mode)
     return SWAP_MODEL, PSFRGAN, PARSING_MODEL, FACE_DETECTION_MODEL
 
