@@ -12,6 +12,8 @@ from dcsimswap.models.models import create_model
 from dcsimswap.options.test_options import TestOptions
 
 
+DEVICE = torch.device("cuda:0")
+
 def video_swap(video_path, id_vetor, id_vetor_flip, crop_size=512):
     """Read video and infer SimSwap"""
 
