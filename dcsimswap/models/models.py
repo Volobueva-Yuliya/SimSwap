@@ -7,7 +7,7 @@ from dcsimswap.models.config import device, num_classes
 
 
 def create_model(opt):
-    if opt.model == 'dcsimswap.pix2pixHD':
+    if opt.model == 'pix2pixHD':
         #from .pix2pixHD_model import Pix2PixHDModel, InferenceModel
         from dcsimswap.models.fs_model import fsModel
         model = fsModel()

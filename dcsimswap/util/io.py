@@ -7,6 +7,10 @@ from torchvision import transforms
 import tqdm
 import numpy as np
 from bisenet import BiSeNetModel
+from skvideo.io import FFmpegWriter
+import os
+import uuid
+import subprocess
 from dcsimswap.insightface_func.face_detect_crop_multi import Face_detect_crop
 from dcsimswap.models.models import create_model
 from dcsimswap.options.test_options import TestOptions
@@ -14,56 +18,58 @@ from dcsimswap.options.test_options import TestOptions
 
 DEVICE = torch.device("cuda:0")
 
-def video_swap(video_path, id_vetor, id_vetor_flip, crop_size=512):
+def video_swap(id_vetor, id_vetor_flip, debug, debug_max_frames, face_detection_model, video, debug_writer, writer, swap_model, use_image_flip, parsing_model, crop_size=512):
     """Read video and infer SimSwap"""
 
-    frame_count = int(VIDEO.get(cv2.CAP_PROP_FRAME_COUNT))
+    frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
     frame_index = 0
     with tqdm(total=frame_count) as bar:
         while True:
-            if DEBUG:
-                if frame_index == DEBUG_MAX_FRAMES:
+            if debug:
+                if frame_index == debug_max_frames:
                     break
-            success, frame = VIDEO.read()
+            success, frame = video.read()
             if not success:
                 break
 
-            detect_results = FACE_DETECTION_MODEL.get(frame, crop_size)
+            detect_results = face_detection_model.get(frame, crop_size)
             if detect_results is not None:  # face detected
                 align_faces = detect_results[0]
-                swap_result_list = infer_simswap_and_psfrgan(align_faces, id_vetor, id_vetor_flip)
+                swap_result_list = infer_simswap_and_psfrgan(align_faces, id_vetor, id_vetor_flip, swap_model, use_image_flip)
 
                 oriimg, debug_img, final_img = reverse2wholeimage(
                     detect_results[0],  # 512x512 crops
                     swap_result_list,  # 512x512 crops
                     detect_results[1],  # mats
                     crop_size,  # 512
-                    frame
+                    frame,
+                    parsing_model,
+                    debug,
                 )
             else:  # face not detected
                 oriimg, debug_img, final_img = frame, frame, frame
 
-            if DEBUG:
+            if debug:
                 if final_img.shape[0] < final_img.shape[1]:
-                    DEBUG_WRITER.writeFrame(np.vstack([oriimg, debug_img, final_img]).astype(np.uint8)[..., ::-1])
+                    debug_writer.writeFrame(np.vstack([oriimg, debug_img, final_img]).astype(np.uint8)[..., ::-1])
                 else:
-                    DEBUG_WRITER.writeFrame(np.hstack([oriimg, debug_img, final_img]).astype(np.uint8)[..., ::-1])
-            WRITER.writeFrame(final_img[..., ::-1])
+                    debug_writer.writeFrame(np.hstack([oriimg, debug_img, final_img]).astype(np.uint8)[..., ::-1])
+            writer.writeFrame(final_img[..., ::-1])
 
             frame_index += 1
             bar.update()
 
 
-def infer_simswap_and_psfrgan(align_faces, id_vetor, id_vetor_flip):
+def infer_simswap_and_psfrgan(align_faces, id_vetor, id_vetor_flip, swap_model, use_image_flip):
     """Apply simswap and PSFRGAN"""
     
     swap_result_list = []
     for align_crop in align_faces:
         # Infer SimSwap model
         align_crop_tenor = torch.Tensor(cv2.cvtColor(align_crop, cv2.COLOR_BGR2RGB)).permute(2, 0, 1)[None].to(DEVICE) / 255
-        swap_result = SWAP_MODEL(None, align_crop_tenor, id_vetor, None, True)[0]
-        if USE_IMAGE_FLIP:
-            swap_result_flip = SWAP_MODEL(None, torch.flip(align_crop_tenor, (3,)), id_vetor_flip, None, True)[0]
+        swap_result = swap_model(None, align_crop_tenor, id_vetor, None, True)[0]
+        if use_image_flip:
+            swap_result_flip = swap_model(None, torch.flip(align_crop_tenor, (3,)), id_vetor_flip, None, True)[0]
             # Merge origin and flip result
             swap_result = (swap_result + torch.flip(swap_result_flip, (2,))) / 2
         swap_result = swap_result.cpu().detach().numpy().transpose((1, 2, 0))  # RGB
@@ -136,7 +142,7 @@ def merger(src_face, dst_face, src_mask, dst_mask):
     return result
 
 
-def reverse2wholeimage(align_faces, swaped_imgs, mats, crop_size, oriimg):
+def reverse2wholeimage(align_faces, swaped_imgs, mats, crop_size, oriimg, parsing_model, debug):
     """Insert swap face back to frame"""
 
     target_image_list = []
@@ -146,13 +152,13 @@ def reverse2wholeimage(align_faces, swaped_imgs, mats, crop_size, oriimg):
         source_img = cv2.cvtColor(source_img, cv2.COLOR_BGR2RGB)
         swaped_img = cv2.cvtColor(swaped_img, cv2.COLOR_BGR2RGB)
 
-        transforms = PARSING_MODEL.get_transforms()
+        transforms = parsing_model.get_transforms()
         # parse source face
-        out = PARSING_MODEL(transforms(source_img)[None].to(DEVICE))
+        out = parsing_model(transforms(source_img)[None].to(DEVICE))
         parsing = out.squeeze(0).detach().cpu().numpy().argmax(0).astype(np.uint8)
         src_mask = encode_segmentation_rgb(parsing)
         # parse swapped face
-        out = PARSING_MODEL(transforms(swaped_img)[None].to(DEVICE))
+        out = parsing_model(transforms(swaped_img)[None].to(DEVICE))
         parsing = out.squeeze(0).detach().cpu().numpy().argmax(0).astype(np.uint8)
         dst_mask = encode_segmentation_rgb(parsing)
 
@@ -186,7 +192,7 @@ def reverse2wholeimage(align_faces, swaped_imgs, mats, crop_size, oriimg):
         img_mask = cv2.GaussianBlur(img_mask, blur_size, 0)
         img_mask_list.append(img_mask[..., None] / 255)
 
-        if DEBUG:
+        if debug:
             debug_target_image = cv2.warpAffine(swaped_img[..., ::-1], mat, orisize,
                                                 flags=cv2.WARP_INVERSE_MAP | cv2.INTER_LINEAR)
             debug_target_image_list.append(debug_target_image)
@@ -210,8 +216,8 @@ def load_models():
     opt = opt.parse()
     opt.crop_size = 512
     opt.which_epoch = 550000
-    opt.Arc_path = './download/arcface_model/arcface_checkpoint.tar'
-    opt.checkpoints_dir = './download/checkpoints'
+    opt.Arc_path = '~/.cache/dcsimswap/download/arcface_model/arcface_checkpoint.tar'
+    opt.checkpoints_dir = '~/.cache/dcsimswap/download/checkpoints'
     torch.nn.Module.dump_patches = False
     opt.name = '512'
     SWAP_MODEL = create_model(opt)
@@ -221,33 +227,81 @@ def load_models():
     PARSING_MODEL = BiSeNetModel(DEVICE).to(DEVICE).eval()
 
     mode = 'ffhq'
-    FACE_DETECTION_MODEL = Face_detect_crop(name='antelope', root='./download/insightface_func/models')
+    FACE_DETECTION_MODEL = Face_detect_crop(name='antelope', root='~/.cache/dcsimswap/download/insightface_func/models')
     FACE_DETECTION_MODEL.prepare(ctx_id=0, det_thresh=0.6, det_size=(640, 640), mode=mode)
     return SWAP_MODEL, PSFRGAN, PARSING_MODEL, FACE_DETECTION_MODEL
 
 
-def run():
+def run(image_path, video_path, output_video_path, debug, debug_max_frames, use_image_flip):
     """Get target embedding and call swap function"""
+    transformer_Arcface = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+    DEVICE = 'cuda:0'
+
+    swap_model, PSFRGAN, parsing_model, face_detection_model = load_models()
+
+    OUTPUT_VIDEO_PATH_DEBUG = f'{output_video_path}debug.mp4'
+    video = cv2.VideoCapture(video_path)
+    fps = str(video.get(cv2.CAP_PROP_FPS))
+    writer = FFmpegWriter(output_video_path,
+                        inputdict={'-r': fps},
+                        outputdict={"-vcodec": "h264", "-crf": '19', "-preset": "veryslow", 
+                                    "-pix_fmt": "yuv420p", "-movflags": "+faststart"})
+    if debug:
+        debug_writer = FFmpegWriter(OUTPUT_VIDEO_PATH_DEBUG, 
+                                    inputdict={'-r': fps},
+                                    outputdict={"-vcodec": "h264", "-crf": '19', "-preset": "veryslow", 
+                                                "-pix_fmt": "yuv420p", "-movflags": "+faststart"})
     with torch.no_grad():
         latend_id = torch.zeros((1, 512)).to(DEVICE)
         latend_id_flip = torch.zeros((1, 512)).to(DEVICE)
-        for pic_a in IMAGE_PATHS:
+        for pic_a in image_path:
             img_a_whole = cv2.imread(pic_a)
-            img_a_align_crop, _ = FACE_DETECTION_MODEL.get(img_a_whole, 512)
+            img_a_align_crop, _ = face_detection_model.get(img_a_whole, 512)
             align_crop = cv2.cvtColor(img_a_align_crop[0], cv2.COLOR_BGR2RGB)
 
             align_crop = cv2.resize(align_crop, (112, 112), interpolation=cv2.INTER_LANCZOS4)
             img = transformer_Arcface(align_crop)[None].to(DEVICE)
 
-            latend_id += SWAP_MODEL.netArc(img)
-            if USE_IMAGE_FLIP:
-                latend_id_flip += SWAP_MODEL.netArc(torch.flip(img, (3,)))
+            latend_id += swap_model.netArc(img)
+            if use_image_flip:
+                latend_id_flip += swap_model.netArc(torch.flip(img, (3,)))
 
         latend_id = F.normalize(latend_id, p=2, dim=1)
         latend_id_flip = F.normalize(latend_id_flip, p=2, dim=1)
 
         video_swap(
-            VIDEO_PATH,
             latend_id,
             latend_id_flip,
+            debug,
+            debug_max_frames,
+            face_detection_model,
+            video,
+            debug_writer,
+            writer,
+            swap_model,
+            use_image_flip,
+            parsing_model,
         )
+    video.release()
+    writer.close()
+    if debug:
+        debug_writer.close()
+        
+    del swap_model
+    del parsing_model
+    del face_detection_model
+    torch.cuda.empty_cache()
+
+
+    tmp_output_path = f"{output_video_path}_{uuid.uuid4().hex}.mp4"
+    command = f"ffmpeg -y -i {output_video_path} -i {video_path} -c:v copy -map 0:v:0 -map 1:a:0 {tmp_output_path}"
+    subprocess.call(command, shell=True, stdout=None)
+    os.rename(tmp_output_path, output_video_path)
+
+    if debug:
+        command = f"ffmpeg -y -i {OUTPUT_VIDEO_PATH_DEBUG} -i {video_path} -c:v copy -map 0:v:0 -map 1:a:0 {tmp_output_path}"
+        subprocess.call(command, shell=True, stdout=None)
+        os.rename(tmp_output_path, OUTPUT_VIDEO_PATH_DEBUG)
