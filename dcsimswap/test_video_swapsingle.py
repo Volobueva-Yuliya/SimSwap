@@ -14,10 +14,10 @@ import numpy as np
 from PIL import Image
 import torch.nn.functional as F
 from torchvision import transforms
-from models.models import create_model
-from options.test_options import TestOptions
-from insightface_func.face_detect_crop_single import Face_detect_crop
-from util.videoswap import video_swap
+from dcsimswap.models.models import create_model
+from dcsimswap.options.test_options import TestOptions
+from dcsimswap.insightface_func.face_detect_crop_single import Face_detect_crop
+from dcsimswap.util.videoswap import video_swap
 import os
 
 def lcm(a, b): return abs(a * b) / fractions.gcd(a, b) if a and b else 0

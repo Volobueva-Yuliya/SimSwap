@@ -14,14 +14,14 @@ import numpy as np
 from PIL import Image
 import torch.nn.functional as F
 from torchvision import transforms
-from models.models import create_model
-from options.test_options import TestOptions
-from insightface_func.face_detect_crop_single import Face_detect_crop
-from util.reverse2original import reverse2wholeimage
+from dcsimswap.models.models import create_model
+from dcsimswap.options.test_options import TestOptions
+from dcsimswap.insightface_func.face_detect_crop_single import Face_detect_crop
+from dcsimswap.util.reverse2original import reverse2wholeimage
 import os
-from util.add_watermark import watermark_image
-from util.norm import SpecificNorm
-from parsing_model.model import BiSeNet
+from dcsimswap.util.add_watermark import watermark_image
+from dcsimswap.util.norm import SpecificNorm
+from dcsimswap.parsing_model.model import BiSeNet
 
 def lcm(a, b): return abs(a * b) / fractions.gcd(a, b) if a and b else 0
 

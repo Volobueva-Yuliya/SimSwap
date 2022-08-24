@@ -5,10 +5,10 @@ import fractions
 from PIL import Image
 import torch.nn.functional as F
 from torchvision import transforms
-from models.models import create_model
-from options.test_options import TestOptions
-from insightface_func.face_detect_crop_multi import Face_detect_crop
-from util.videoswap_multispecific import video_swap
+from dcsimswap.models.models import create_model
+from dcsimswap.options.test_options import TestOptions
+from dcsimswap.insightface_func.face_detect_crop_multi import Face_detect_crop
+from dcsimswap.util.videoswap_multispecific import video_swap
 import os
 import glob
 
