@@ -10,6 +10,7 @@ from skvideo.io import FFmpegWriter
 import os
 import uuid
 import subprocess
+from skimage import io
 from tqdm.auto import tqdm
 from pathlib import Path
 from dcsimswap.insightface_func.face_detect_crop_multi import Face_detect_crop
@@ -259,7 +260,7 @@ def run(image_path, video_path, output_video_path, debug, debug_max_frames, use_
         latend_id = torch.zeros((1, 512)).to(DEVICE)
         latend_id_flip = torch.zeros((1, 512)).to(DEVICE)
         for pic_a in image_path:
-            img_a_whole = cv2.imread(pic_a)
+            img_a_whole = io.imread(pic_a)
             img_a_align_crop, _ = face_detection_model.get(img_a_whole, 512)
             align_crop = cv2.cvtColor(img_a_align_crop[0], cv2.COLOR_BGR2RGB)
 

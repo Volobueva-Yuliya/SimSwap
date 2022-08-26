@@ -17,6 +17,7 @@ setup(
         'insightface',
         'pillow',
         'tqdm',
+        'skimage',
     ],
     include_package_data=True,
     package_data={'': ['*.yaml']},
