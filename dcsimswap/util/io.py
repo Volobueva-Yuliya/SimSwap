@@ -299,11 +299,11 @@ def run(image_path, video_path, output_video_path, debug, debug_max_frames, use_
 
 
     tmp_output_path = f"{output_video_path}_{uuid.uuid4().hex}.mp4"
-    command = f"ffmpeg -y -i {output_video_path} -i {video_path} -c:v copy -map 0:v:0 -map 1:a:0 {tmp_output_path}"
+    command = f'ffmpeg -y -i "{output_video_path}" -i "{video_path}" -c:v copy -map 0:v:0 -map 1:a:0 "{tmp_output_path}"'
     subprocess.call(command, shell=True, stdout=None)
     os.rename(tmp_output_path, output_video_path)
 
     if debug:
-        command = f"ffmpeg -y -i {OUTPUT_VIDEO_PATH_DEBUG} -i {video_path} -c:v copy -map 0:v:0 -map 1:a:0 {tmp_output_path}"
+        command = f'ffmpeg -y -i "{OUTPUT_VIDEO_PATH_DEBUG}" -i "{video_path}" -c:v copy -map 0:v:0 -map 1:a:0 "{tmp_output_path}"'
         subprocess.call(command, shell=True, stdout=None)
         os.rename(tmp_output_path, OUTPUT_VIDEO_PATH_DEBUG)
