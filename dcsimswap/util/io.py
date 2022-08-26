@@ -260,7 +260,7 @@ def run(image_path, video_path, output_video_path, debug, debug_max_frames, use_
         latend_id = torch.zeros((1, 512)).to(DEVICE)
         latend_id_flip = torch.zeros((1, 512)).to(DEVICE)
         for pic_a in image_path:
-            img_a_whole = io.imread(pic_a)
+            img_a_whole = io.imread(pic_a)[..., ::-1]
             img_a_align_crop, _ = face_detection_model.get(img_a_whole, 512)
             align_crop = cv2.cvtColor(img_a_align_crop[0], cv2.COLOR_BGR2RGB)
 
